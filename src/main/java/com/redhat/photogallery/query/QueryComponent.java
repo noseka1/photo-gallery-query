@@ -1,5 +1,6 @@
 package com.redhat.photogallery.query;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -40,7 +41,7 @@ public class QueryComponent implements ServerComponent {
 
 	@Override
 	public void registerRoutes(Router router) {
-		router.get("/query").handler(this::readAllOrderedByLikes);
+		router.get("/query").handler(this::readCategoryOrderedByLikes);
 	}
 
 	@Override
@@ -85,13 +86,26 @@ public class QueryComponent implements ServerComponent {
 		LOG.error("Failed to receive likes", t);
 	}
 
-	private void readAllOrderedByLikes(RoutingContext rc) {
+	private void readCategoryOrderedByLikes(RoutingContext rc) {
+		String category = rc.request().getParam("category");
+		if (category == null) {
+			LOG.error("Parameter category is missing");
+			rc.response().setStatusCode(400).end();
+			return;
+		}
+		List<QueryItem> items = dataStore.getAllItems();
+		List<QueryItem> categoryItems = new ArrayList<>();
+		for (QueryItem item : items) {
+			if (item.getCategory().equals(category)) {
+				categoryItems.add(item);
+			}
+		}
+		categoryItems.sort(orderByLikes);
+
 		HttpServerResponse response = rc.response();
 		response.putHeader("content-type", "application/json");
-		List<QueryItem> items = dataStore.getAllItems();
-		items.sort(orderByLikes);
-		response.end(Json.encodePrettily(items));
-		LOG.info("Returned all {} items", dataStore.getAllItems().size());
+		response.end(Json.encodePrettily(categoryItems));
+		LOG.info("Returned {} items in category {}", categoryItems.size(), category);
 	}
 
 }

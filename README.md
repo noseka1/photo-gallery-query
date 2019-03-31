@@ -18,8 +18,8 @@ java -jar ./target/photo-gallery-query-1.0-SNAPSHOT-fat.jar
 
 After the service starts up you can test it using curl.
 
-To retrieve all photos ordered by number of likes:
+To retrieve all photos from a specific category ordered by number of likes:
 
 ```
-curl -v localhost:8082/query
+curl localhost:8082/query?category=animals
 ```
