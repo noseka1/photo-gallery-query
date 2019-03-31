@@ -2,7 +2,7 @@
 
 Query component
 
-his component requires the `photo-gallery-common` library. Make sure you build that library first.
+This component requires the `photo-gallery-common` library. Make sure you build that library first.
 
 You can build this project using:
 
