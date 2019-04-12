@@ -4,6 +4,17 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import javax.inject.Inject;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.GenericEntity;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.QueryParam;
+
 import com.redhat.photogallery.common.Constants;
 import com.redhat.photogallery.common.ServerComponent;
 import com.redhat.photogallery.common.data.DataStore;
@@ -13,8 +24,10 @@ import com.redhat.photogallery.common.data.QueryItem;
 
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.vertx.reactivex.core.eventbus.EventBus;
 import io.vertx.reactivex.core.eventbus.Message;
 import io.vertx.reactivex.core.eventbus.MessageProducer;
@@ -22,7 +35,8 @@ import io.vertx.reactivex.core.http.HttpServerResponse;
 import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
 
-public class QueryComponent implements ServerComponent {
+@Path("/query")
+public class QueryComponent {
 
     private static final Logger LOG = LoggerFactory.getLogger(QueryComponent.class);
 
@@ -39,12 +53,7 @@ public class QueryComponent implements ServerComponent {
         return 0;
     };
 
-    @Override
-    public void registerRoutes(Router router) {
-        router.get("/query").handler(this::readCategoryOrderedByLikes);
-    }
-
-    @Override
+    @Inject
     public void injectEventBus(EventBus eventBus) {
         eventBus.<JsonObject>consumer(Constants.PHOTOS_TOPIC_NAME).toObservable().subscribe(this::onNextPhoto,
                 this::onErrorPhoto);
@@ -86,13 +95,10 @@ public class QueryComponent implements ServerComponent {
         LOG.error("Failed to receive likes", t);
     }
 
-    private void readCategoryOrderedByLikes(RoutingContext rc) {
-        String category = rc.request().getParam("category");
-        if (category == null) {
-            LOG.error("Parameter category is missing");
-            rc.response().setStatusCode(400).end();
-            return;
-        }
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response readCategoryOrderedByLikes(@QueryParam("category") String category) {
+
         List<QueryItem> items = dataStore.getAllItems();
         List<QueryItem> categoryItems = new ArrayList<>();
         for (QueryItem item : items) {
@@ -101,11 +107,8 @@ public class QueryComponent implements ServerComponent {
             }
         }
         categoryItems.sort(orderByLikes);
-
-        HttpServerResponse response = rc.response();
-        response.putHeader("content-type", "application/json");
-        response.end(Json.encodePrettily(categoryItems));
         LOG.info("Returned {} items in category {}", categoryItems.size(), category);
+        return Response.ok(new GenericEntity<List<QueryItem>>(categoryItems){}).build();
     }
 
 }

@@ -13,7 +13,7 @@ mvn clean install package
 You can run this component as a standalone service using:
 
 ```
-java -jar ./target/photo-gallery-query-1.0-SNAPSHOT-fat.jar
+java -jar target/photo-gallery-query-1.0-SNAPSHOT-runner.jar
 ```
 
 After the service starts up you can test it using curl.
