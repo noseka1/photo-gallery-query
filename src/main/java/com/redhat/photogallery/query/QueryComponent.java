@@ -16,7 +16,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.QueryParam;
 
 import com.redhat.photogallery.common.Constants;
-import com.redhat.photogallery.common.ServerComponent;
 import com.redhat.photogallery.common.data.DataStore;
 import com.redhat.photogallery.common.data.LikesItem;
 import com.redhat.photogallery.common.data.PhotoItem;
