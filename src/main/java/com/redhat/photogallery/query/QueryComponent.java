@@ -5,15 +5,16 @@ import java.util.Comparator;
 import java.util.List;
 
 import javax.inject.Inject;
-import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.QueryParam;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.redhat.photogallery.common.Constants;
 import com.redhat.photogallery.common.data.DataStore;
@@ -21,18 +22,9 @@ import com.redhat.photogallery.common.data.LikesItem;
 import com.redhat.photogallery.common.data.PhotoItem;
 import com.redhat.photogallery.common.data.QueryItem;
 
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import io.vertx.reactivex.core.eventbus.EventBus;
 import io.vertx.reactivex.core.eventbus.Message;
-import io.vertx.reactivex.core.eventbus.MessageProducer;
-import io.vertx.reactivex.core.http.HttpServerResponse;
-import io.vertx.reactivex.ext.web.Router;
-import io.vertx.reactivex.ext.web.RoutingContext;
+import io.quarkus.vertx.ConsumeEvent;
 
 @Path("/query")
 public class QueryComponent {
@@ -40,8 +32,6 @@ public class QueryComponent {
     private static final Logger LOG = LoggerFactory.getLogger(QueryComponent.class);
 
     private DataStore<QueryItem> dataStore = new DataStore<>();
-
-    MessageProducer<JsonObject> topic;
 
     private static final Comparator<QueryItem> orderByLikes = (o1, o2) -> {
         if (o1.getLikes() > o2.getLikes()) {
@@ -52,15 +42,8 @@ public class QueryComponent {
         return 0;
     };
 
-    @Inject
-    public void injectEventBus(EventBus eventBus) {
-        eventBus.<JsonObject>consumer(Constants.PHOTOS_TOPIC_NAME).toObservable().subscribe(this::onNextPhoto,
-                this::onErrorPhoto);
-        eventBus.<JsonObject>consumer(Constants.LIKES_TOPIC_NAME).toObservable().subscribe(this::onNextLikes,
-                this::onErrorLikes);
-    }
-
-    private void onNextPhoto(Message<JsonObject> photoObject) {
+    @ConsumeEvent(Constants.PHOTOS_TOPIC_NAME)
+    public void onNextPhoto(Message<JsonObject> photoObject) {
         PhotoItem item = photoObject.body().mapTo(PhotoItem.class);
         QueryItem savedItem = dataStore.getItem(item.getId());
         if (savedItem == null) {
@@ -73,11 +56,8 @@ public class QueryComponent {
         LOG.info("Updated in data store {}", savedItem);
     }
 
-    private void onErrorPhoto(Throwable t) {
-        LOG.error("Failed to receive photo", t);
-    }
-
-    private void onNextLikes(Message<JsonObject> likesObject) {
+    @ConsumeEvent(Constants.LIKES_TOPIC_NAME)
+    public void onNextLikes(Message<JsonObject> likesObject) {
         LikesItem item = likesObject.body().mapTo(LikesItem.class);
         QueryItem savedItem = dataStore.getItem(item.getId());
         if (savedItem == null) {
@@ -88,10 +68,6 @@ public class QueryComponent {
         savedItem.setLikes(likes);
         dataStore.putItem(savedItem);
         LOG.info("Updated in data store {}", savedItem);
-    }
-
-    private void onErrorLikes(Throwable t) {
-        LOG.error("Failed to receive likes", t);
     }
 
     @GET
