@@ -68,6 +68,7 @@ public class QueryResource {
     public Response readCategoryOrderedByLikes(@QueryParam("category") String category) {
         Query query = entityManager.createQuery("FROM QueryItem WHERE category =?1 ORDER BY likes DESC");
         query.setParameter(1, category);
+        @SuppressWarnings("unchecked")
         List<QueryItem> items = query.getResultList();
         LOG.info("Returned {} items in category {}", items.size(), category);
         return Response.ok(new GenericEntity<List<QueryItem>>(items){}).build();
