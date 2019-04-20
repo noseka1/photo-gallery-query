@@ -33,7 +33,7 @@ public class QueryResource {
     @Inject
     EntityManager entityManager;
 
-    @ConsumeEvent(Constants.PHOTOS_TOPIC_NAME)
+    @ConsumeEvent(value = Constants.PHOTOS_TOPIC_NAME, blocking = true)
     @Transactional
     public void onNextPhoto(Message<JsonObject> photoObject) {
         PhotoMessage photoMessage = photoObject.body().mapTo(PhotoMessage.class);
@@ -48,7 +48,7 @@ public class QueryResource {
         LOG.info("Updated in data store {}", savedItem);
     }
 
-    @ConsumeEvent(Constants.LIKES_TOPIC_NAME)
+    @ConsumeEvent(value = Constants.LIKES_TOPIC_NAME, blocking = true)
     @Transactional
     public void onNextLikes(Message<JsonObject> likesObject) {
         LikesMessage likesMessage = likesObject.body().mapTo(LikesMessage.class);
