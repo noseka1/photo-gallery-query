@@ -41,10 +41,10 @@ public class QueryResource {
         if (savedItem == null) {
             savedItem = new QueryItem();
             savedItem.id = photoMessage.getId();
+            savedItem.persist();
         }
         savedItem.name = photoMessage.getName();
         savedItem.category = photoMessage.getCategory();
-        savedItem.persist();
         LOG.info("Updated in data store {}", savedItem);
     }
 
@@ -56,10 +56,10 @@ public class QueryResource {
         if (savedItem == null) {
             savedItem = new QueryItem();
             savedItem.id = likesMessage.getId();
+            savedItem.persist();
         }
-        int likes = savedItem.likes + likesMessage.getLikes();
+        int likes = likesMessage.getLikes();
         savedItem.likes = likes;
-        savedItem.persist();
         LOG.info("Updated in data store {}", savedItem);
     }
 
