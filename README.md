@@ -83,7 +83,23 @@ Deploy the application:
 oc new-app \
 --image-stream query \
 --name query \
---env QUARKUS_DATASOURCE_URL=jdbc:postgresql://postgresql-query:5432/querydb
+--env QUARKUS_DATASOURCE_URL=jdbc:postgresql://postgresql-query:5432/querydb \
+--env QUARKUS_VERTX_CLUSTER_HOST=0.0.0.0
+```
+
+Edit the generated query deploymentconfig:
+
+```
+oc edit dc query
+```
+
+And add this variable definition that allows Vert.x cluster nodes to correctly communicate with each other:
+
+```
+        - name: QUARKUS_VERTX_CLUSTER_PUBLIC_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
 ```
 
 Expose the application to the outside world:
