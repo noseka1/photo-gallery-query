@@ -18,8 +18,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.redhat.photogallery.common.Constants;
-import com.redhat.photogallery.common.data.LikesMessage;
-import com.redhat.photogallery.common.data.PhotoMessage;
+import com.redhat.photogallery.common.data.LikesAddedMessage;
+import com.redhat.photogallery.common.data.PhotoCreatedMessage;
 
 import io.quarkus.vertx.ConsumeEvent;
 import io.vertx.core.json.JsonObject;
@@ -35,30 +35,30 @@ public class QueryResource {
 
     @ConsumeEvent(value = Constants.PHOTOS_TOPIC_NAME, blocking = true)
     @Transactional
-    public void onNextPhoto(Message<JsonObject> photoObject) {
-        PhotoMessage photoMessage = photoObject.body().mapTo(PhotoMessage.class);
-        QueryItem savedItem = entityManager.find(QueryItem.class, photoMessage.getId());
+    public void onNextPhotoCreated(Message<JsonObject> photoObject) {
+        PhotoCreatedMessage message = photoObject.body().mapTo(PhotoCreatedMessage.class);
+        QueryItem savedItem = entityManager.find(QueryItem.class, message.getId());
         if (savedItem == null) {
             savedItem = new QueryItem();
-            savedItem.id = photoMessage.getId();
+            savedItem.id = message.getId();
             savedItem.persist();
         }
-        savedItem.name = photoMessage.getName();
-        savedItem.category = photoMessage.getCategory();
+        savedItem.name = message.getName();
+        savedItem.category = message.getCategory();
         LOG.info("Updated in data store {}", savedItem);
     }
 
     @ConsumeEvent(value = Constants.LIKES_TOPIC_NAME, blocking = true)
     @Transactional
-    public void onNextLikes(Message<JsonObject> likesObject) {
-        LikesMessage likesMessage = likesObject.body().mapTo(LikesMessage.class);
-        QueryItem savedItem = entityManager.find(QueryItem.class, likesMessage.getId());
+    public void onNextLikesAdded(Message<JsonObject> likesObject) {
+        LikesAddedMessage message = likesObject.body().mapTo(LikesAddedMessage.class);
+        QueryItem savedItem = entityManager.find(QueryItem.class, message.getId());
         if (savedItem == null) {
             savedItem = new QueryItem();
-            savedItem.id = likesMessage.getId();
+            savedItem.id = message.getId();
             savedItem.persist();
         }
-        int likes = likesMessage.getLikes();
+        int likes = message.getLikes();
         savedItem.likes = likes;
         LOG.info("Updated in data store {}", savedItem);
     }
