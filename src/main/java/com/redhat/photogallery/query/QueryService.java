@@ -26,9 +26,9 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.eventbus.Message;
 
 @Path("/query")
-public class QueryResource {
+public class QueryService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(QueryResource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(QueryService.class);
 
     @Inject
     EntityManager entityManager;
