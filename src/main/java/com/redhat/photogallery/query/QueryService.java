@@ -2,15 +2,11 @@ package com.redhat.photogallery.query;
 
 import java.util.List;
 
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.Query;
 import javax.transaction.Transactional;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -30,14 +26,11 @@ public class QueryService {
 
     private static final Logger LOG = LoggerFactory.getLogger(QueryService.class);
 
-    @Inject
-    EntityManager entityManager;
-
     @ConsumeEvent(value = Constants.PHOTOS_TOPIC_NAME, blocking = true)
     @Transactional
     public void onNextPhotoCreated(Message<JsonObject> photoObject) {
         PhotoCreatedMessage message = photoObject.body().mapTo(PhotoCreatedMessage.class);
-        QueryItem savedItem = entityManager.find(QueryItem.class, message.getId());
+        QueryItem savedItem = QueryItem.findById(message.getId());
         if (savedItem == null) {
             savedItem = new QueryItem();
             savedItem.id = message.getId();
@@ -52,26 +45,22 @@ public class QueryService {
     @Transactional
     public void onNextLikesAdded(Message<JsonObject> likesObject) {
         LikesAddedMessage message = likesObject.body().mapTo(LikesAddedMessage.class);
-        QueryItem savedItem = entityManager.find(QueryItem.class, message.getId());
+        QueryItem savedItem = QueryItem.findById(message.getId());
         if (savedItem == null) {
             savedItem = new QueryItem();
             savedItem.id = message.getId();
             savedItem.persist();
         }
-        int likes = message.getLikes();
-        savedItem.likes = likes;
+        savedItem.likes = message.getLikes();
         LOG.info("Updated in data store {}", savedItem);
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response readCategoryOrderedByLikes(@QueryParam("category") String category) {
-        Query query = entityManager.createQuery("FROM QueryItem WHERE category =?1 ORDER BY likes DESC");
-        query.setParameter(1, category);
-        @SuppressWarnings("unchecked")
-        List<QueryItem> items = query.getResultList();
+        List<QueryItem> items = QueryItem.find("FROM QueryItem WHERE category =?1 ORDER BY likes DESC", category).list();
         LOG.info("Returned {} items in category {}", items.size(), category);
-        return Response.ok(new GenericEntity<List<QueryItem>>(items){}).build();
+        return Response.ok(items).build();
     }
 
 }
